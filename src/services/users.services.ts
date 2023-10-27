@@ -42,7 +42,7 @@ class UsersService {
     const user_id = result.insertedId.toString()
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id)
     //lưu refresh token vào database
-    await databaseService.refeshTokens.insertOne(
+    await databaseService.refreshTokens.insertOne(
       new RefreshToken({
         token: refresh_token,
         user_id: new ObjectId(user_id)
@@ -52,7 +52,7 @@ class UsersService {
   }
   async login(user_id: string) {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id)
-    await databaseService.refeshTokens.insertOne(
+    await databaseService.refreshTokens.insertOne(
       new RefreshToken({
         token: refresh_token,
         user_id: new ObjectId(user_id)
