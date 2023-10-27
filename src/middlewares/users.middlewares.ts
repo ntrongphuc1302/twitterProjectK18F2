@@ -181,8 +181,8 @@ export const accessTokenValidator = validate(
             try {
               //nếu có accessToken thì kiểm tra xem có hợp lệ hay không
               const decoded_authorization = await verifyToken({ token: accessToken })
+              ;(req as Request).decoded_authorization = decoded_authorization
               //lấy ra decoded_authorization(payload), lưu vào req để dùng cho các middleware sau
-              req.decoded_authorization = decoded_authorization
             } catch (error) {
               throw new ErrorWithStatus({
                 message: capitalize((error as JsonWebTokenError).message),
@@ -209,19 +209,21 @@ export const refreshTokenValidator = validate(
           options: async (value: string, { req }) => {
             //verify the refresh token
             try {
-              const decoded_refresh_token = await verifyToken({ token: value })
-              //search if the refresh token is exist in the database
-              const refreshToken = await databaseService.refreshTokens.findOne({
-                token: value
-              })
-              if (refreshToken === null) {
+              const [decoded_refresh_token, refresh_token] = await Promise.all([
+                verifyToken({ token: value }),
+                databaseService.refreshTokens.findOne({
+                  token: value
+                })
+              ])
+
+              if (refresh_token === null) {
                 throw new ErrorWithStatus({
                   message: USERS_MESSAGES.REFRESH_TOKEN_IS_NOT_EXIST,
                   status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
               //store it in req.decoded_refresh_token
-              req.decoded_refresh_token = decoded_refresh_token
+              ;(req as Request).decoded_refresh_token = decoded_refresh_token
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
