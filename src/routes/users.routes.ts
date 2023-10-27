@@ -1,6 +1,11 @@
 import { Router } from 'express'
-import { loginController } from '~/controllers/users.controllers'
-import { loginValidator, registerValidator } from '~/middlewares/users.middlewares'
+import { loginController, logoutController } from '~/controllers/users.controllers'
+import {
+  accessTokenValidator,
+  loginValidator,
+  refreshTokenValidator,
+  registerValidator
+} from '~/middlewares/users.middlewares'
 import { registerController } from '~/controllers/users.controllers'
 import { warpAsync } from '~/utils/handlers'
 const usersRoute = Router()
@@ -26,4 +31,13 @@ usersRoute.get('/login', loginValidator, warpAsync(loginController))
  * }
  */
 usersRoute.post('/register', registerValidator, warpAsync(registerController))
+
+/*
+des: đăng xuất
+path: /users/logout
+method: POST
+headers: {Authorization: 'Bearer <accessToken>'}
+body: {refreshToken}
+*/
+usersRoute.post('/logout', accessTokenValidator, refreshTokenValidator, warpAsync(logoutController))
 export default usersRoute
