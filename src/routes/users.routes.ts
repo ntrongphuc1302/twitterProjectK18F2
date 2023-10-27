@@ -11,7 +11,7 @@ path: /users/login
 method: POST
 body: {email, password}
 */
-usersRoute.get('/login', loginValidator, loginController)
+usersRoute.get('/login', loginValidator, warpAsync(loginController))
 
 /**
  * registerValidator
