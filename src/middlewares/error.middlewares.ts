@@ -6,7 +6,7 @@ import { ErrorWithStatus } from '~/models/Errors'
 export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
   //   lỗi từ mọi nơi dồn về đây
   if (err instanceof ErrorWithStatus) {
-    res.status(err.status).json(omit(err, ['status']))
+    return res.status(err.status).json(omit(err, ['status']))
   }
   //nếu mà lỗi xuống được đây thì nghĩa là lỗi mặc định
   //set name, stack, message là enumerable true
