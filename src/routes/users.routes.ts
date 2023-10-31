@@ -72,6 +72,6 @@ headers: {Authorization: "Bearer <access_token>"} //đăng nhập mới được
 body: {}
 */
 
-usersRoute.post('/resend-vevify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
+usersRoute.post('/resend-verify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
 
 export default usersRoute
