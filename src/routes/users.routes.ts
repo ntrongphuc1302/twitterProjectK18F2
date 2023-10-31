@@ -1,5 +1,10 @@
 import { Router } from 'express'
-import { emailVerifyTokenController, loginController, logoutController } from '~/controllers/users.controllers'
+import {
+  emailVerifyTokenController,
+  loginController,
+  logoutController,
+  resendEmailVerifyController
+} from '~/controllers/users.controllers'
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
@@ -55,5 +60,18 @@ method: POST
 body: {email_verify_token: string}
 */
 usersRoute.post('/verify-email', emailVerifyTokenValidator, warpAsync(emailVerifyTokenController))
+
+/*
+des: resend email verify token
+khi mail chưa được verify thì sẽ gửi lại email_verify_token
+nhu cầu này sẽ được sử dụng khi người dùng quên mật khẩu
+
+method: POST
+path: /users/resend-email-verify-token
+headers: {Authorization: "Bearer <access_token>"} //đăng nhập mới được resend
+body: {}
+*/
+
+usersRoute.post('/resend-vevify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
 
 export default usersRoute

@@ -4,7 +4,13 @@ import databaseService from '~/services/database.services'
 import usersService from '~/services/users.services'
 import UsersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
-import { LogoutReqBody, TokenPayload, loginReqBody, registerReqBody } from '~/models/requests/User.requests'
+import {
+  LogoutReqBody,
+  TokenPayload,
+  VerifyEmailReqBody,
+  loginReqBody,
+  registerReqBody
+} from '~/models/requests/User.requests'
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
@@ -41,10 +47,47 @@ export const logoutController = async (req: Request<ParamsDictionary, any, Logou
   res.json(result)
 }
 
-export const emailVerifyTokenController = async (req: Request, res: Response) => {
+export const emailVerifyTokenController = async (
+  req: Request<ParamsDictionary, any, VerifyEmailReqBody>,
+  res: Response
+) => {
   //nếu code vào được đây thì email_verify_token đã được verify
   //và đã được decode thành user_id
   const { user_id } = req.decoded_email_verify_token as TokenPayload
+  //dựa vào user_id tìm user và xem thử nó đã verify email chưa
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+  if (user === null) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_NOT_FOUND,
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+  //nếu mà k khớp email_verify_token thì throw error
+  if (user.email_verify_token !== (req.body.email_verify_token as string)) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.EMAIL_VERIFY_TOKEN_IS_INCORRECT,
+      status: HTTP_STATUS.UNAUTHORIZED
+    })
+  }
+  //nếu mà user đã verify email rồi thì throw error
+  if (user.verify === UserVerifyStatus.Verified && user.email_verify_token === '') {
+    return res.json({
+      message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE
+    })
+  }
+  //nếu mà xuống được đây có nghĩa là user chưa verify email
+  //mình sẽ update lại user đó
+  const result = await usersService.verifyEmail(user_id)
+  res.json({
+    message: USERS_MESSAGES.EMAIL_VERIFY_SUCCESS,
+    result
+  })
+}
+
+export const resendEmailVerifyController = async (req: Request, res: Response) => {
+  //nếu vào được đây thì access_token đã được verify
+  //và mình đã lấy được decoded_authorization
+  const { user_id } = req.decoded_authorization as TokenPayload
   //dựa vào user_id tìm user và xem thử nó đã verify email chưa
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
   if (user === null) {
@@ -58,11 +101,15 @@ export const emailVerifyTokenController = async (req: Request, res: Response) =>
       message: USERS_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE
     })
   }
-  //nếu mà xuống được đây có nghĩa là user chưa verify email
-  //mình sẽ update lại user đó
-  const result = await usersService.verifyEmail(user_id)
-  res.json({
-    message: USERS_MESSAGES.EMAIL_VERIFY_SUCCESS,
-    result
-  })
+  if (user.verify === UserVerifyStatus.Banned) {
+    throw new ErrorWithStatus({
+      message: USERS_MESSAGES.USER_BANNED, //user bị banned
+      status: HTTP_STATUS.FORBIDDEN //403
+    })
+  }
+  //user này thật sự chưa verify email
+  //email_verify_token sẽ được tạo lại
+  //cập nhật lại user
+  const result = await usersService.resendEmailVerify(user_id)
+  return res.json(result)
 }
