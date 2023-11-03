@@ -5,6 +5,7 @@ import {
   loginController,
   logoutController,
   resendEmailVerifyController,
+  resetPasswordController,
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import {
@@ -14,6 +15,7 @@ import {
   loginValidator,
   refreshTokenValidator,
   registerValidator,
+  resetPasswordValidator,
   verifyForgotPasswordTokenValidator
 } from '~/middlewares/users.middlewares'
 import { registerController } from '~/controllers/users.controllers'
@@ -102,6 +104,23 @@ usersRoute.post(
   '/verify-forgot-password',
   verifyForgotPasswordTokenValidator,
   warpAsync(verifyForgotPasswordTokenController)
+)
+
+/*
+des: khi người dùng đã nhận được email với link reset password
+họ sẽ gửi 1 request reset_password lên server
+server sẽ kiểm tra reset_password có hợp lệ hay không
+sau đó update lại password mới cho user
+path: /users/reset-password
+method: POST
+body: {forgot_password_token: string, password: string, confirm_password: string}
+*/
+
+usersRoute.post(
+  '/reset-password',
+  resetPasswordValidator,
+  verifyForgotPasswordTokenValidator,
+  warpAsync(resetPasswordController)
 )
 
 export default usersRoute

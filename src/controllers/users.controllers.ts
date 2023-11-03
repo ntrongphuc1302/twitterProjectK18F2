@@ -6,6 +6,7 @@ import UsersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
   LogoutReqBody,
+  ResetPasswordReqBody,
   TokenPayload,
   VerifyEmailReqBody,
   loginReqBody,
@@ -126,4 +127,16 @@ export const verifyForgotPasswordTokenController = async (req: Request, res: Res
   return res.json({
     message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
   })
+}
+
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
+  res: Response
+) => {
+  //muốn đổi password thì cần user_id và password mới
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+  const { password } = req.body
+  //cập nhật
+  const result = await usersService.resetPassword({ user_id, password })
+  return res.json(result)
 }
