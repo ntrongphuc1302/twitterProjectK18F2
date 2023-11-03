@@ -3,10 +3,12 @@ import {
   emailVerifyTokenController,
   forgotPasswordController,
   getMeController,
+  getProfileController,
   loginController,
   logoutController,
   resendEmailVerifyController,
   resetPasswordController,
+  updateMeController,
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import {
@@ -17,10 +19,14 @@ import {
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
+  updateMeValidator,
+  verifiedUserValidator,
   verifyForgotPasswordTokenValidator
 } from '~/middlewares/users.middlewares'
 import { registerController } from '~/controllers/users.controllers'
-import { warpAsync } from '~/utils/handlers'
+import { wrapAsync } from '~/utils/handlers'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
+import { UpdateMeReqBody } from '~/models/requests/User.requests'
 const usersRouter = Router()
 
 /*
@@ -29,7 +35,7 @@ path: /users/login
 method: POST
 body: {email, password}
 */
-usersRouter.get('/login', loginValidator, warpAsync(loginController))
+usersRouter.get('/login', loginValidator, wrapAsync(loginController))
 
 /**
  * registerValidator
@@ -43,7 +49,7 @@ usersRouter.get('/login', loginValidator, warpAsync(loginController))
  *      date_of_birth: string theo chuẩn ISO 8601
  * }
  */
-usersRouter.post('/register', registerValidator, warpAsync(registerController))
+usersRouter.post('/register', registerValidator, wrapAsync(registerController))
 
 /*
 des: đăng xuất
@@ -52,7 +58,7 @@ method: POST
 headers: {Authorization: 'Bearer <accessToken>'}
 body: {refreshToken}
 */
-usersRouter.post('/logout', accessTokenValidator, refreshTokenValidator, warpAsync(logoutController))
+usersRouter.post('/logout', accessTokenValidator, refreshTokenValidator, wrapAsync(logoutController))
 
 /*
 des: verify email
@@ -66,7 +72,7 @@ path: /users/verify-email
 method: POST
 body: {email_verify_token: string}
 */
-usersRouter.post('/verify-email', emailVerifyTokenValidator, warpAsync(emailVerifyTokenController))
+usersRouter.post('/verify-email', emailVerifyTokenValidator, wrapAsync(emailVerifyTokenController))
 
 /*
 des: resend email verify token
@@ -79,7 +85,7 @@ headers: {Authorization: "Bearer <access_token>"} //đăng nhập mới được
 body: {}
 */
 
-usersRouter.post('/resend-verify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
+usersRouter.post('/resend-verify-email', accessTokenValidator, wrapAsync(resendEmailVerifyController))
 
 /*
 des: khi người dùng quên mật khẩu, họ sẽ gửi email cho hệ thống yêu cầu reset password
@@ -89,7 +95,7 @@ path: /users/reset-password
 method: POST
 body: {email: string}
 */
-usersRouter.post('/forgot-password', forgotPasswordValidator, warpAsync(forgotPasswordController))
+usersRouter.post('/forgot-password', forgotPasswordValidator, wrapAsync(forgotPasswordController))
 
 /*
 des: khi người dùng nhấn vào link trong email sẽ tạo ra một request gửi lên server
@@ -104,7 +110,7 @@ body: {forgot_password_token: string}
 usersRouter.post(
   '/verify-forgot-password',
   verifyForgotPasswordTokenValidator,
-  warpAsync(verifyForgotPasswordTokenController)
+  wrapAsync(verifyForgotPasswordTokenController)
 )
 
 /*
@@ -121,7 +127,7 @@ usersRouter.post(
   '/reset-password',
   resetPasswordValidator,
   verifyForgotPasswordTokenValidator,
-  warpAsync(resetPasswordController)
+  wrapAsync(resetPasswordController)
 )
 
 /*
@@ -131,6 +137,34 @@ method: GET
 Header: {Authorization}
 body: {}
 */
-usersRouter.get('/me', accessTokenValidator, warpAsync(getMeController))
+usersRouter.get('/me', accessTokenValidator, wrapAsync(getMeController))
+
+usersRouter.patch(
+  '/me',
+  accessTokenValidator,
+  verifiedUserValidator,
+  filterMiddleware<UpdateMeReqBody>([
+    'name',
+    'date_of_birth',
+    'bio',
+    'location',
+    'website',
+    'avatar',
+    'username',
+    'cover_photo'
+  ]),
+  updateMeValidator,
+  wrapAsync(updateMeController)
+)
+//truyền khác key là nó báo lỗi ngay
+
+/*
+des: get profile của user
+path: '/:username'
+method: GET
+Header: {}
+body: {}
+*/
+usersRouter.get('/:username', wrapAsync(getProfileController))
 
 export default usersRouter
