@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   emailVerifyTokenController,
   forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   resendEmailVerifyController,
@@ -20,7 +21,7 @@ import {
 } from '~/middlewares/users.middlewares'
 import { registerController } from '~/controllers/users.controllers'
 import { warpAsync } from '~/utils/handlers'
-const usersRoute = Router()
+const usersRouter = Router()
 
 /*
 des: đăng nhập
@@ -28,7 +29,7 @@ path: /users/login
 method: POST
 body: {email, password}
 */
-usersRoute.get('/login', loginValidator, warpAsync(loginController))
+usersRouter.get('/login', loginValidator, warpAsync(loginController))
 
 /**
  * registerValidator
@@ -42,7 +43,7 @@ usersRoute.get('/login', loginValidator, warpAsync(loginController))
  *      date_of_birth: string theo chuẩn ISO 8601
  * }
  */
-usersRoute.post('/register', registerValidator, warpAsync(registerController))
+usersRouter.post('/register', registerValidator, warpAsync(registerController))
 
 /*
 des: đăng xuất
@@ -51,7 +52,7 @@ method: POST
 headers: {Authorization: 'Bearer <accessToken>'}
 body: {refreshToken}
 */
-usersRoute.post('/logout', accessTokenValidator, refreshTokenValidator, warpAsync(logoutController))
+usersRouter.post('/logout', accessTokenValidator, refreshTokenValidator, warpAsync(logoutController))
 
 /*
 des: verify email
@@ -65,7 +66,7 @@ path: /users/verify-email
 method: POST
 body: {email_verify_token: string}
 */
-usersRoute.post('/verify-email', emailVerifyTokenValidator, warpAsync(emailVerifyTokenController))
+usersRouter.post('/verify-email', emailVerifyTokenValidator, warpAsync(emailVerifyTokenController))
 
 /*
 des: resend email verify token
@@ -78,7 +79,7 @@ headers: {Authorization: "Bearer <access_token>"} //đăng nhập mới được
 body: {}
 */
 
-usersRoute.post('/resend-verify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
+usersRouter.post('/resend-verify-email', accessTokenValidator, warpAsync(resendEmailVerifyController))
 
 /*
 des: khi người dùng quên mật khẩu, họ sẽ gửi email cho hệ thống yêu cầu reset password
@@ -88,7 +89,7 @@ path: /users/reset-password
 method: POST
 body: {email: string}
 */
-usersRoute.post('/forgot-password', forgotPasswordValidator, warpAsync(forgotPasswordController))
+usersRouter.post('/forgot-password', forgotPasswordValidator, warpAsync(forgotPasswordController))
 
 /*
 des: khi người dùng nhấn vào link trong email sẽ tạo ra một request gửi lên server
@@ -100,7 +101,7 @@ method: POST
 body: {forgot_password_token: string}
 */
 
-usersRoute.post(
+usersRouter.post(
   '/verify-forgot-password',
   verifyForgotPasswordTokenValidator,
   warpAsync(verifyForgotPasswordTokenController)
@@ -116,11 +117,20 @@ method: POST
 body: {forgot_password_token: string, password: string, confirm_password: string}
 */
 
-usersRoute.post(
+usersRouter.post(
   '/reset-password',
   resetPasswordValidator,
   verifyForgotPasswordTokenValidator,
   warpAsync(resetPasswordController)
 )
 
-export default usersRoute
+/*
+des:: get profile của user
+path: '/me'
+method: GET
+Header: {Authorization}
+body: {}
+*/
+usersRouter.get('/me', accessTokenValidator, warpAsync(getMeController))
+
+export default usersRouter
